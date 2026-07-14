@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuestra Historia - Árbol Majestuoso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #030305; 
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        .overlay-text {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 1s ease;
+        }
+        #etapa3-texto {
+            top: 45%;
+            left: 60%;
+            transform: translateY(-50%);
+            max-width: 380px;
+        }
+        #etapa3-texto h2 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3rem;
+            color: #ff75a0;
+            margin: 0 0 15px 0;
+            text-shadow: 0 0 15px rgba(255, 117, 160, 0.6);
+        }
+        #etapa3-texto p {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #e0e0e6;
+        }
+        #carta-contenedor {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 90%;
+            max-width: 550px;
+            padding: 45px;
+            box-sizing: border-box;
+            background: rgba(10, 10, 15, 0.35);
+            border: 1px solid rgba(255, 117, 160, 0.25);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(255, 117, 160, 0.15);
+            text-align: center;
+            pointer-events: auto;
+        }
+        #carta-contenedor h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.5rem;
+            color: #ff4d80;
+            margin-top: 0;
+            text-shadow: 0 0 20px rgba(255, 77, 128, 0.5);
+        }
+        #carta-contenedor p {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: #f5f5fa;
+            text-align: justify;
+        }
+        .firma {
+            margin-top: 35px;
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+            color: #ff75a0;
+            text-align: right !important;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="etapa3-texto" class="overlay-text">
+        <h2>Nuestras raíces...</h2>
+        <p>Al igual que este árbol, nuestro amor comenzó con una semilla silenciosa y creció fuerte, extendiendo sus ramas hacia el cielo, alimentándose de cada momento compartido.</p>
+    </div>
+
+    <div id="carta-contenedor" class="overlay-text">
+        <h1>Para Ti, Mi Amor</h1>
+        <p>
+            Aquí es donde puedes colocar esa carta tan especial que me vas a pasar. Cada palabra flotará rodeada de una lluvia mágica de corazones latiendo en el fondo. He diseñado este espacio para que se sienta íntimo, cálido y absolutamente inolvidable. El amor no se trata solo de florecer, sino de saber qué hojas dejar ir para que nazcan historias aún más hermosas.
+        </p>
+        <p class="firma">Con todo mi amor...</p>
+    </div>
+
+    <script>
+        // 1. CONFIGURACIÓN DEL ESCENARIO 3D
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.set(0, 0, 320); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        function crearTexturaParticula(r, g, b) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 16; canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');      
+            gradient.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.8)`);    
+            gradient.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.2)`);    
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');              
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, 16, 16);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // 2. GENERACIÓN MEJORADA DEL ÁRBOL MAJESTUOSO
+        const trunkVertices = []; 
+        const leafVertices = [];  
+        const fallingVertices = []; 
+
+        // Ecuación paramétrica de corazón con escala ampliada
+        function generarCorazon(puntosArray, cx, cy, cz, escala) {
+            const numPuntos = 20; // Más puntos para definir mejor el contorno del corazón
+            for (let i = 0; i < numPuntos; i++) {
+                const t = (i / numPuntos) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                
+                const vector = new THREE.Vector3(
+                    cx + x * escala,
+                    cy + y * escala,
+                    cz + (Math.random() - 0.5) * 8
+                );
+                puntosArray.push(vector);
+            }
+        }
+
+        // Algoritmo de ramas gruesas y volumétricas
+        function crearRama(x1, y1, z1, angulo, longitud, grosor, profundidad) {
+            if (profundidad === 0) {
+                // Hojas gigantes (escala subida de 1.2 a 3.5)
+                if (Math.random() > 0.4) {
+                    generarCorazon(leafVertices, x1, y1, z1, 3.5);
+                } else {
+                    generarCorazon(fallingVertices, x1, y1, z1, 3.5);
+                }
+                return;
+            }
+
+            const x2 = x1 + Math.sin(angulo) * longitud;
+            const y2 = y1 + Math.cos(angulo) * longitud;
+            const z2 = z1 + (Math.random() - 0.5) * (longitud * 0.4);
+
+            // Generamos un cilindro denso de partículas alrededor de la rama
+            const pasos = longitud * 2;
+            for (let i = 0; i < pasos; i++) {
+                const t = i / pasos;
+                const grosorActual = grosor * (1 - t * 0.25); // Disminución de grosor suave
+
+                // 4 partículas en anillo por cada paso horizontal para dar volumen real 3D
+                for (let j = 0; j < 4; j++) {
+                    const anguloAnillo = Math.random() * Math.PI * 2;
+                    const radioAnillo = Math.random() * grosorActual;
+                    
+                    trunkVertices.push(new THREE.Vector3(
+                        THREE.MathUtils.lerp(x1, x2, t) + Math.cos(anguloAnillo) * radioAnillo,
+                        THREE.MathUtils.lerp(y1, y2, t) + Math.sin(anguloAnillo) * radioAnillo,
+                        THREE.MathUtils.lerp(z1, z2, t) + (Math.random() - 0.5) * grosorActual
+                    ));
+                }
+            }
+
+            const nRamas = 2;
+            for (let r = 0; r < nRamas; r++) {
+                const nuevoAngulo = angulo + (Math.random() - 0.5) * 0.7;
+                // Escalado de grosor suavizado (0.72) para mantener las ramas altas robustas
+                crearRama(x2, y2, z2, nuevoAngulo, longitud * 0.75, grosor * 0.72, profundidad - 1);
+            }
+        }
+
+        // Iniciamos el árbol con un súper grosor de base (24 en lugar de 8)
+        crearRama(0, -140, 0, 0, 75, 24, 6);
+
+        // 3. ENTORNO DINÁMICO DE CORAZONES EN MOVIMIENTO (Etapa 5)
+        const bgVertices = [];
+        const totalCorazonesFondo = 80;
+        const puntosPorCorazon = 20;
+
+        for (let i = 0; i < totalCorazonesFondo; i++) {
+            generarCorazon(
+                bgVertices, 
+                (Math.random() - 0.5) * 900, // Distribución horizontal masiva
+                (Math.random() - 0.5) * 500, 
+                -100 + (Math.random() - 0.5) * 40, 
+                1.8 // Corazones de fondo grandes y vistosos
+            );
+        }
+
+        // 4. MATERIALES Y PUNTOS DE CONTROL
+        const trunkGeo = new THREE.BufferGeometry().setFromPoints(trunkVertices);
+        const trunkMat = new THREE.PointsMaterial({ size: 3.5, map: crearTexturaParticula(230, 175, 45), transparent: true, blending: THREE.AdditiveBlending });
+        const trunkPointsObj = new THREE.Points(trunkGeo, trunkMat);
+
+        const leafGeo = new THREE.BufferGeometry().setFromPoints(leafVertices);
+        const leafMat = new THREE.PointsMaterial({ size: 5.5, map: crearTexturaParticula(255, 100, 150), transparent: true, blending: THREE.AdditiveBlending });
+        const leafPointsObj = new THREE.Points(leafGeo, leafMat);
+
+        const fallingGeo = new THREE.BufferGeometry().setFromPoints(fallingVertices);
+        const fallingMat = new THREE.PointsMaterial({ size: 5.5, map: crearTexturaParticula(255, 30, 90), transparent: true, blending: THREE.AdditiveBlending });
+        const fallingPointsObj = new THREE.Points(fallingGeo, fallingMat);
+
+        const bgGeo = new THREE.BufferGeometry().setFromPoints(bgVertices);
+        const bgMat = new THREE.PointsMaterial({ size: 4.0, map: crearTexturaParticula(255, 70, 130), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+        const bgPointsObj = new THREE.Points(bgGeo, bgMat);
+
+        const arbolGrupo = new THREE.Group();
+        arbolGrupo.add(trunkPointsObj, leafPointsObj, fallingPointsObj);
+        scene.add(arbolGrupo, bgPointsObj);
+
+        // 5. CRONOGRAMA DE ANIMACIÓN CON GSAP
+        const tl = gsap.timeline();
+
+        tl.addLabel("etapa1");
+        tl.from(trunkVertices, { x: 0, y: -140, z: 0, duration: 3.5, ease: "power3.out", stagger: { each: 0.00005 } }, "etapa1");
+        tl.from(leafVertices, { x: 0, y: -140, z: 0, duration: 4, ease: "power2.out", stagger: { each: 0.0001 } }, "etapa1+=1");
+        tl.from(fallingVertices, { x: 0, y: -140, z: 0, duration: 4, ease: "power2.out", stagger: { each: 0.0001 } }, "etapa1+=1");
+
+        tl.addLabel("etapa2", "+=0.5");
+        tl.to(arbolGrupo.position, { x: -160, duration: 2.5, ease: "power2.inOut" }, "etapa2");
+        tl.to(arbolGrupo.rotation, { y: 0.25, duration: 2.5, ease: "power2.inOut" }, "etapa2");
+
+        tl.addLabel("etapa3");
+        tl.to("#etapa3-texto", { opacity: 1, y: -20, duration: 2 }, "etapa3");
+
+        tl.addLabel("etapa4", "+=3");
+        fallingVertices.forEach((v, index) => {
+            tl.to(v, {
+                y: -160 + (Math.random() - 0.5) * 15, 
+                x: v.x + (Math.random() - 0.5) * 100,  
+                z: v.z + (Math.random() - 0.5) * 40,
+                duration: "random(4, 7)",
+                ease: "sine.inOut"
+            }, "etapa4+=" + (index * 0.001));
+        });
+
+        tl.addLabel("etapa5", "+=3");
+        tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.5 }, "etapa5");
+        tl.to(arbolGrupo.position, { z: -180, x: -220, duration: 3, ease: "power2.inOut" }, "etapa5");
+        tl.to(bgMat, { opacity: 0.65, duration: 2.5 }, "etapa5");
+        tl.to(bgPointsObj.position, { z: 40, duration: 4, ease: "power2.out" }, "etapa5");
+        tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.1)" }, "etapa5+=1");
+
+        // 6. ANIMACIÓN CONTINUA Y CÁLCULO DE VIENTO HORIZONTAL
+        function animate() {
+            requestAnimationFrame(animate);
+
+            trunkGeo.setFromPoints(trunkVertices);
+            trunkGeo.attributes.position.needsUpdate = true;
+
+            leafGeo.setFromPoints(leafVertices);
+            leafGeo.attributes.position.needsUpdate = true;
+
+            fallingGeo.setFromPoints(fallingVertices);
+            fallingGeo.attributes.position.needsUpdate = true;
+
+            // ANIMACIÓN DE ETAPA 5: Corazones del fondo moviéndose de un lado a otro
+            if (bgMat.opacity > 0.1) {
+                const puntosMatriz = bgGeo.attributes.position.array;
+                let pointer = 0;
+                
+                for (let h = 0; h < totalCorazonesFondo; h++) {
+                    // Velocidades personalizadas por corazón para dar efecto de profundidad natural
+                    const velX = 0.5 + (h % 4) * 0.25; 
+                    const oscilacionY = Math.sin(Date.now() * 0.0012 + h) * 0.2; 
+
+                    for (let p = 0; p < puntosPorCorazon; p++) {
+                        const vIndex = h * puntosPorCorazon + p;
+                        if (vIndex < bgVertices.length) {
+                            // Desplazamos horizontalmente
+                            bgVertices[vIndex].x += velX;
+                            bgVertices[vIndex].y += oscilacionY;
+
+                            // Si cruza el borde derecho de la pantalla (450px relativo), regresa al extremo izquierdo
+                            if (bgVertices[vIndex].x > 480) {
+                                bgVertices[vIndex].x = -480;
+                            }
+                        }
+                    }
+                }
+                bgGeo.setFromPoints(bgVertices);
+                bgGeo.attributes.position.needsUpdate = true;
+            }
+
+            const tiempo = Date.now() * 0.0004;
+            arbolGrupo.rotation.y = 0.25 + Math.sin(tiempo * 0.5) * 0.04;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
