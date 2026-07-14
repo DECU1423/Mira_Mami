@@ -153,7 +153,7 @@
         const trunkVertices = [];
         const leafVertices = [];
         const fallingVertices = [];
-        const datosFisicaCaida = []; // Guardará las propiedades físicas individuales de caída de forma ligera
+        const datosFisicaCaida = []; 
 
         // GENERADOR DE FOLLAGE MASIVO
         function generarFollajeEsfericoDenso(cx, cy, cz, radioFollaje) {
@@ -176,7 +176,6 @@
                     leafVertices.push(hojaPunto);
                 } else {
                     fallingVertices.push(hojaPunto);
-                    // Guardamos propiedades de física nativa en lugar de tweens de GSAP
                     datosFisicaCaida.push({
                         velocidadY: 0.6 + Math.random() * 1.2,
                         velocidadX: (Math.random() - 0.5) * 0.3,
@@ -257,7 +256,7 @@
             });
         }
 
-        // 4. MATERIALES ASIGNADOS
+        // 4. CONFIGURACIÓN DE GEOMETRÍAS Y MATERIALES
         const trunkGeo = new THREE.BufferGeometry().setFromPoints(trunkVertices);
         const trunkMat = new THREE.PointsMaterial({ size: 3.8, map: crearTexturaMaderaLuminosa(245, 185, 55), transparent: true, blending: THREE.AdditiveBlending });
         const trunkPointsObj = new THREE.Points(trunkGeo, trunkMat);
@@ -278,16 +277,15 @@
         arbolGrupo.add(trunkPointsObj, leafPointsObj, fallingPointsObj);
         scene.add(arbolGrupo, bgPointsObj);
 
-        // Control numérico único para la animación de caída nativa
-        const controlCaida = { progresoHojas: 0 };
+        // Variable única de control numérico para el renderizado progresivo
+        const controlGlobal = { crecimiento: 0, progresoHojas: 0 };
 
-        // 5. CRONOGRAMA DE ETAPAS EFICIENTE CON GSAP
+        // 5. CRONOGRAMA DE ETAPAS LIGERO (Sin bucles pesados dentro de GSAP)
         const tl = gsap.timeline();
 
         tl.addLabel("etapa1");
-        tl.from(trunkVertices, { x: 0, y: -140, z: 0, duration: 3.5, ease: "power2.out", stagger: { each: 0.00002 } }, "etapa1");
-        tl.from(leafVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
-        tl.from(fallingVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
+        // Animamos únicamente la variable global (0 a 1) de forma lineal y fluida
+        tl.to(controlGlobal, { crecimiento: 1, duration: 4.0, ease: "power1.out" }, "etapa1");
 
         tl.addLabel("etapa2", "+=0.3");
         tl.to(arbolGrupo.position, { x: -150, y: -5, duration: 3.0, ease: "power2.inOut" }, "etapa2");
@@ -296,9 +294,8 @@
         tl.addLabel("etapa3");
         tl.to("#etapa3-texto", { opacity: 1, y: -15, duration: 1.8 }, "etapa3");
 
-        // ETAPA 4 OPTIMIZADA: Solo animamos un contador lineal. Carga en 0 milisegundos.
         tl.addLabel("etapa4", "+=3.5");
-        tl.to(controlCaida, { progresoHojas: 1, duration: 9.0, ease: "power1.inOut" }, "etapa4");
+        tl.to(controlGlobal, { progresoHojas: 1, duration: 9.0, ease: "power1.inOut" }, "etapa4");
 
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
@@ -307,24 +304,28 @@
         tl.to(bgPointsObj.position, { z: 30, duration: 3.5, ease: "power2.out" }, "etapa5");
         tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
 
-        // 6. BUCLE DE RENDIMIENTO E INYECCIÓN DE FÍSICAS NATIVAS (60 FPS estables)
+        // 6. BUCLE DE RENDIMIENTO NATIVO (60 FPS estables)
+        const totalTrunk = trunkVertices.length;
+        const totalLeaf = leafVertices.length;
+        const totalFalling = fallingVertices.length;
+
         function animate() {
             requestAnimationFrame(animate);
 
             const tiempoActual = Date.now();
 
-            trunkGeo.setFromPoints(trunkVertices);
-            trunkGeo.attributes.position.needsUpdate = true;
+            // Crecimiento progresivo manejado por la GPU usando DrawRange (Evita colapsos de memoria)
+            trunkGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalTrunk));
+            leafGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalLeaf));
 
-            leafGeo.setFromPoints(leafVertices);
-            leafGeo.attributes.position.needsUpdate = true;
-
-            // MOTOR DE CAÍDA INTERNO: Mueve las hojas simulando viento de forma masiva y fluida
-            if (controlCaida.progresoHojas > 0.001) {
-                const limiteHojasActivadas = Math.floor(controlCaida.progresoHojas * fallingVertices.length);
+            if (controlGlobal.progresoHojas === 0) {
+                fallingGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalFalling));
+            } else {
+                fallingGeo.setDrawRange(0, totalFalling);
+                
+                const limiteHojasActivadas = Math.floor(controlGlobal.progresoHojas * totalFalling);
                 
                 fallingVertices.forEach((v, idx) => {
-                    // Solo caen las hojas si el contador global las ha alcanzado (efecto cascada)
                     if (idx < limiteHojasActivadas) {
                         const fisica = datosFisicaCaida[idx];
                         
@@ -338,7 +339,7 @@
                 fallingGeo.attributes.position.needsUpdate = true;
             }
 
-            // Viento de fondo continuo
+            // Brisa del fondo
             if (bgMat.opacity > 0.05) {
                 bgVertices.forEach((v, idx) => {
                     const config = datosCorazonesFondo[idx];
