@@ -114,7 +114,7 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // TEXTURA DE CORAZÓN CON VOLUMEN 3D (La frondosidad que te encantó)
+        // TEXTURAS OPTIMIZADAS
         function crearTexturaCorazonVolumetrico(colorCentro, colorBorde) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -137,7 +137,6 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        // TEXTURA DE MADERA DE ORO DESTELLANTE (Efecto brillante e iluminado)
         function crearTexturaMaderaLuminosa(r, g, b) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
@@ -150,12 +149,13 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        // 2. VECTORES DE ELEMENTOS
+        // 2. ARRAYS DE COMPONENTES
         const trunkVertices = [];
         const leafVertices = [];
         const fallingVertices = [];
+        const datosFisicaCaida = []; // Guardará las propiedades físicas individuales de caída de forma ligera
 
-        // GENERADOR DE HOJAS CON ALTA FRONDOSIDAD
+        // GENERADOR DE FOLLAGE MASIVO
         function generarFollajeEsfericoDenso(cx, cy, cz, radioFollaje) {
             const densidadPorNudo = 140; 
             
@@ -176,18 +176,26 @@
                     leafVertices.push(hojaPunto);
                 } else {
                     fallingVertices.push(hojaPunto);
+                    // Guardamos propiedades de física nativa en lugar de tweens de GSAP
+                    datosFisicaCaida.push({
+                        velocidadY: 0.6 + Math.random() * 1.2,
+                        velocidadX: (Math.random() - 0.5) * 0.3,
+                        sueloTarget: -145 + (Math.random() - 0.5) * 10,
+                        wobbleSpeed: 0.002 + Math.random() * 0.003,
+                        wobbleAmp: 0.15 + Math.random() * 0.25,
+                        fase: Math.random() * Math.PI * 2
+                    });
                 }
             }
         }
 
-        // CONSTRUCTOR PROCEDURAL DEL TRONCO (Densidad de puntos duplicada para máxima presencia)
+        // TRONCO DORADO LUMINOSO ORIGINAL
         function crearArbolProcedural(x1, y1, z1, angulo, longitud, grosor, profundidad) {
             const curvatura = Math.sin(profundidad * 1.5) * (profundidad * 2.2);
             const x2 = x1 + Math.sin(angulo) * longitud + curvatura;
             const y2 = y1 + Math.cos(angulo) * longitud;
             const z2 = z1 + (Math.random() - 0.5) * (longitud * 0.25);
 
-            // Incrementamos los pasos para densificar la cantidad de partículas de oro
             const pasos = longitud * 4;
             for (let i = 0; i < pasos; i++) {
                 const t = i / pasos;
@@ -198,7 +206,6 @@
                     factorBase = 1 + (0.3 - t) * 2.5; 
                 }
 
-                // Duplicamos los puntos por anillo para que el tronco sea grueso, compacto y brillante
                 const puntosAnillo = Math.max(6, Math.floor(grosorActual * 2.4));
                 for (let j = 0; j < puntosAnillo; j++) {
                     const ang = (j / puntosAnillo) * Math.PI * 2;
@@ -229,11 +236,9 @@
             }
         }
 
-        // Construcción estructural inicial
         crearArbolProcedural(0, -140, 0, 0, 72, 20, 5);
 
-
-        // 3. LLUVIA DE CORAZONES DE ENTORNO EN ETAPA FINAL
+        // 3. ENTORNO DE FONDO
         const bgVertices = [];
         const datosCorazonesFondo = [];
         const totalCorazonesFondo = 110;
@@ -252,31 +257,17 @@
             });
         }
 
-
-        // 4. MATERIALES CONFIGURADOS (Oro destellante para el tronco y Carmesí Premium para hojas)
+        // 4. MATERIALES ASIGNADOS
         const trunkGeo = new THREE.BufferGeometry().setFromPoints(trunkVertices);
-        // Ajustamos color a un Oro/Ámbar radiante (245, 185, 55) y aumentamos tamaño a 3.8 con AdditiveBlending
         const trunkMat = new THREE.PointsMaterial({ size: 3.8, map: crearTexturaMaderaLuminosa(245, 185, 55), transparent: true, blending: THREE.AdditiveBlending });
         const trunkPointsObj = new THREE.Points(trunkGeo, trunkMat);
 
         const leafGeo = new THREE.BufferGeometry().setFromPoints(leafVertices);
-        const leafMat = new THREE.PointsMaterial({ 
-            size: 16.0, 
-            map: crearTexturaCorazonVolumetrico('#ff4071', '#c70039'), 
-            transparent: true, 
-            alphaTest: 0.12, 
-            blending: THREE.NormalBlending 
-        });
+        const leafMat = new THREE.PointsMaterial({ size: 16.0, map: crearTexturaCorazonVolumetrico('#ff4071', '#c70039'), transparent: true, alphaTest: 0.12, blending: THREE.NormalBlending });
         const leafPointsObj = new THREE.Points(leafGeo, leafMat);
 
         const fallingGeo = new THREE.BufferGeometry().setFromPoints(fallingVertices);
-        const fallingMat = new THREE.PointsMaterial({ 
-            size: 16.0, 
-            map: crearTexturaCorazonVolumetrico('#ff1a53', '#b3002d'), 
-            transparent: true, 
-            alphaTest: 0.12, 
-            blending: THREE.NormalBlending 
-        });
+        const fallingMat = new THREE.PointsMaterial({ size: 16.0, map: crearTexturaCorazonVolumetrico('#ff1a53', '#b3002d'), transparent: true, alphaTest: 0.12, blending: THREE.NormalBlending });
         const fallingPointsObj = new THREE.Points(fallingGeo, fallingMat);
 
         const bgGeo = new THREE.BufferGeometry().setFromPoints(bgVertices);
@@ -287,38 +278,28 @@
         arbolGrupo.add(trunkPointsObj, leafPointsObj, fallingPointsObj);
         scene.add(arbolGrupo, bgPointsObj);
 
+        // Control numérico único para la animación de caída nativa
+        const controlCaida = { progresoHojas: 0 };
 
-        // 5. ANIMACIONES POR ETAPAS CON GSAP
+        // 5. CRONOGRAMA DE ETAPAS EFICIENTE CON GSAP
         const tl = gsap.timeline();
 
-        // ETAPA 1: El tronco de oro crece y se corona con la inmensa cantidad de corazones
         tl.addLabel("etapa1");
         tl.from(trunkVertices, { x: 0, y: -140, z: 0, duration: 3.5, ease: "power2.out", stagger: { each: 0.00002 } }, "etapa1");
         tl.from(leafVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
         tl.from(fallingVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
 
-        // ETAPA 2: El árbol entero se desplaza con elegancia a la izquierda
         tl.addLabel("etapa2", "+=0.3");
         tl.to(arbolGrupo.position, { x: -150, y: -5, duration: 3.0, ease: "power2.inOut" }, "etapa2");
         tl.to(arbolGrupo.rotation, { y: 0.12, duration: 3.0, ease: "power2.inOut" }, "etapa2");
 
-        // ETAPA 3: Aparece texto explicativo en el lateral
         tl.addLabel("etapa3");
         tl.to("#etapa3-texto", { opacity: 1, y: -15, duration: 1.8 }, "etapa3");
 
-        // ETAPA 4: Lluvia masiva de hojas cayendo hacia la base dorada
+        // ETAPA 4 OPTIMIZADA: Solo animamos un contador lineal. Carga en 0 milisegundos.
         tl.addLabel("etapa4", "+=3.5");
-        fallingVertices.forEach((v, index) => {
-            tl.to(v, {
-                y: -145 + (Math.random() - 0.5) * 10, 
-                x: v.x + (Math.random() - 0.5) * 150, 
-                z: v.z + (Math.random() - 0.5) * 60,
-                duration: "random(5, 8.5)",
-                ease: "sine.inOut"
-            }, "etapa4+=" + (index * 0.0004));
-        });
+        tl.to(controlCaida, { progresoHojas: 1, duration: 9.0, ease: "power1.inOut" }, "etapa4");
 
-        // ETAPA 5: Despliegue de la hermosa carta final
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
         tl.to(arbolGrupo.position, { z: -150, x: -240, duration: 3.2, ease: "power2.inOut" }, "etapa5");
@@ -326,10 +307,11 @@
         tl.to(bgPointsObj.position, { z: 30, duration: 3.5, ease: "power2.out" }, "etapa5");
         tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
 
-
-        // 6. FLUJO DE RENDERIZADO Y BRISA CONTINUA
+        // 6. BUCLE DE RENDIMIENTO E INYECCIÓN DE FÍSICAS NATIVAS (60 FPS estables)
         function animate() {
             requestAnimationFrame(animate);
+
+            const tiempoActual = Date.now();
 
             trunkGeo.setFromPoints(trunkVertices);
             trunkGeo.attributes.position.needsUpdate = true;
@@ -337,11 +319,27 @@
             leafGeo.setFromPoints(leafVertices);
             leafGeo.attributes.position.needsUpdate = true;
 
-            fallingGeo.setFromPoints(fallingVertices);
-            fallingGeo.attributes.position.needsUpdate = true;
+            // MOTOR DE CAÍDA INTERNO: Mueve las hojas simulando viento de forma masiva y fluida
+            if (controlCaida.progresoHojas > 0.001) {
+                const limiteHojasActivadas = Math.floor(controlCaida.progresoHojas * fallingVertices.length);
+                
+                fallingVertices.forEach((v, idx) => {
+                    // Solo caen las hojas si el contador global las ha alcanzado (efecto cascada)
+                    if (idx < limiteHojasActivadas) {
+                        const fisica = datosFisicaCaida[idx];
+                        
+                        if (v.y > fisica.sueloTarget) {
+                            v.y -= fisica.velocidadY;
+                            v.x += Math.sin(tiempoActual * fisica.wobbleSpeed + fisica.fase) * fisica.wobbleAmp + fisica.velocidadX;
+                        }
+                    }
+                });
+                fallingGeo.setFromPoints(fallingVertices);
+                fallingGeo.attributes.position.needsUpdate = true;
+            }
 
+            // Viento de fondo continuo
             if (bgMat.opacity > 0.05) {
-                const tiempoActual = Date.now();
                 bgVertices.forEach((v, idx) => {
                     const config = datosCorazonesFondo[idx];
                     v.x += config.velocidadX;
