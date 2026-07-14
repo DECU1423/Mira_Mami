@@ -9,7 +9,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #030103; 
+            background-color: #020102; 
             font-family: 'Montserrat', sans-serif;
             color: #ffffff;
         }
@@ -104,17 +104,17 @@
     </div>
 
     <script>
-        // 1. CONFIGURACIÓN DEL ESCENARIO 3D (Cámara alejada para ver el árbol completo y la caída)
+        // 1. CONFIGURACIÓN DEL ESCENARIO 3D
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
-        camera.position.set(0, 20, 440); // Alejada a 440 para encuadrar las raíces y el suelo perfectamente
+        camera.position.set(0, 20, 440); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // TEXTURA DE CORAZÓN CON VOLUMEN (La que te gustó)
+        // TEXTURA DE CORAZÓN CON VOLUMEN 3D (La frondosidad que te encantó)
         function crearTexturaCorazonVolumetrico(colorCentro, colorBorde) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -137,24 +137,25 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        // TEXTURA DE TRONCO ORIGINAL (Color exacto del primer diseño que te gustó)
-        function crearTexturaMadera(r, g, b) {
+        // TEXTURA DE MADERA DE ORO DESTELLANTE (Efecto brillante e iluminado)
+        function crearTexturaMaderaLuminosa(r, g, b) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(8,8,0, 8,8,8);
             grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
+            grad.addColorStop(0.5, `rgba(${Math.floor(r*0.7)},${Math.floor(g*0.6)},${Math.floor(b*0.4)},0.8)`);
             grad.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
             return new THREE.CanvasTexture(canvas);
         }
 
-        // 2. VECTORES DE COMPONENTES
+        // 2. VECTORES DE ELEMENTOS
         const trunkVertices = [];
         const leafVertices = [];
         const fallingVertices = [];
 
-        // GENERADOR DE HOJAS CON MÁXIMA DENSIDAD
+        // GENERADOR DE HOJAS CON ALTA FRONDOSIDAD
         function generarFollajeEsfericoDenso(cx, cy, cz, radioFollaje) {
             const densidadPorNudo = 140; 
             
@@ -179,24 +180,26 @@
             }
         }
 
-        // TRONCO ORIGINAL QUE TE GUSTABA (Con la base ensanchada visible)
+        // CONSTRUCTOR PROCEDURAL DEL TRONCO (Densidad de puntos duplicada para máxima presencia)
         function crearArbolProcedural(x1, y1, z1, angulo, longitud, grosor, profundidad) {
             const curvatura = Math.sin(profundidad * 1.5) * (profundidad * 2.2);
             const x2 = x1 + Math.sin(angulo) * longitud + curvatura;
             const y2 = y1 + Math.cos(angulo) * longitud;
             const z2 = z1 + (Math.random() - 0.5) * (longitud * 0.25);
 
-            const pasos = longitud * 3;
+            // Incrementamos los pasos para densificar la cantidad de partículas de oro
+            const pasos = longitud * 4;
             for (let i = 0; i < pasos; i++) {
                 const t = i / pasos;
                 const grosorActual = grosor * (1 - t * 0.45);
                 
                 let factorBase = 1;
                 if (profundidad === 5 && t < 0.3) {
-                    factorBase = 1 + (0.3 - t) * 2.5; // Esto crea la base abierta dorada del suelo
+                    factorBase = 1 + (0.3 - t) * 2.5; 
                 }
 
-                const puntosAnillo = Math.max(3, Math.floor(grosorActual * 1.2));
+                // Duplicamos los puntos por anillo para que el tronco sea grueso, compacto y brillante
+                const puntosAnillo = Math.max(6, Math.floor(grosorActual * 2.4));
                 for (let j = 0; j < puntosAnillo; j++) {
                     const ang = (j / puntosAnillo) * Math.PI * 2;
                     const r = Math.random() * grosorActual * factorBase;
@@ -226,11 +229,11 @@
             }
         }
 
-        // Posicionamiento base
+        // Construcción estructural inicial
         crearArbolProcedural(0, -140, 0, 0, 72, 20, 5);
 
 
-        // 3. ENTORNO INTERACTIVO DE FONDO
+        // 3. LLUVIA DE CORAZONES DE ENTORNO EN ETAPA FINAL
         const bgVertices = [];
         const datosCorazonesFondo = [];
         const totalCorazonesFondo = 110;
@@ -250,9 +253,10 @@
         }
 
 
-        // 4. MATERIALES (Restaurados al 100% los valores del tronco dorado que te gustó)
+        // 4. MATERIALES CONFIGURADOS (Oro destellante para el tronco y Carmesí Premium para hojas)
         const trunkGeo = new THREE.BufferGeometry().setFromPoints(trunkVertices);
-        const trunkMat = new THREE.PointsMaterial({ size: 2.5, map: crearTexturaMadera(105, 60, 45), transparent: true, blending: THREE.AdditiveBlending });
+        // Ajustamos color a un Oro/Ámbar radiante (245, 185, 55) y aumentamos tamaño a 3.8 con AdditiveBlending
+        const trunkMat = new THREE.PointsMaterial({ size: 3.8, map: crearTexturaMaderaLuminosa(245, 185, 55), transparent: true, blending: THREE.AdditiveBlending });
         const trunkPointsObj = new THREE.Points(trunkGeo, trunkMat);
 
         const leafGeo = new THREE.BufferGeometry().setFromPoints(leafVertices);
@@ -284,29 +288,29 @@
         scene.add(arbolGrupo, bgPointsObj);
 
 
-        // 5. CRONOGRAMA DE ANIMACIÓN POR ETAPAS
+        // 5. ANIMACIONES POR ETAPAS CON GSAP
         const tl = gsap.timeline();
 
-        // ETAPA 1: Crecimiento y floración completa en pantalla
+        // ETAPA 1: El tronco de oro crece y se corona con la inmensa cantidad de corazones
         tl.addLabel("etapa1");
         tl.from(trunkVertices, { x: 0, y: -140, z: 0, duration: 3.5, ease: "power2.out", stagger: { each: 0.00002 } }, "etapa1");
         tl.from(leafVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
         tl.from(fallingVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
 
-        // ETAPA 2: El árbol se mueve elegantemente a la izquierda sin salirse de la vista
+        // ETAPA 2: El árbol entero se desplaza con elegancia a la izquierda
         tl.addLabel("etapa2", "+=0.3");
         tl.to(arbolGrupo.position, { x: -150, y: -5, duration: 3.0, ease: "power2.inOut" }, "etapa2");
         tl.to(arbolGrupo.rotation, { y: 0.12, duration: 3.0, ease: "power2.inOut" }, "etapa2");
 
-        // ETAPA 3: Aparece texto descriptivo lateral
+        // ETAPA 3: Aparece texto explicativo en el lateral
         tl.addLabel("etapa3");
         tl.to("#etapa3-texto", { opacity: 1, y: -15, duration: 1.8 }, "etapa3");
 
-        // ETAPA 4: Caída libre de corazones (Ahora completamente visible en el suelo del escenario)
+        // ETAPA 4: Lluvia masiva de hojas cayendo hacia la base dorada
         tl.addLabel("etapa4", "+=3.5");
         fallingVertices.forEach((v, index) => {
             tl.to(v, {
-                y: -145 + (Math.random() - 0.5) * 10, // Caen justo en el suelo visible junto al tronco dorado
+                y: -145 + (Math.random() - 0.5) * 10, 
                 x: v.x + (Math.random() - 0.5) * 150, 
                 z: v.z + (Math.random() - 0.5) * 60,
                 duration: "random(5, 8.5)",
@@ -314,7 +318,7 @@
             }, "etapa4+=" + (index * 0.0004));
         });
 
-        // ETAPA 5: Transición a la carta de amor
+        // ETAPA 5: Despliegue de la hermosa carta final
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
         tl.to(arbolGrupo.position, { z: -150, x: -240, duration: 3.2, ease: "power2.inOut" }, "etapa5");
@@ -323,7 +327,7 @@
         tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
 
 
-        // 6. ANIMACIONES INFINITAS DE BRISA
+        // 6. FLUJO DE RENDERIZADO Y BRISA CONTINUA
         function animate() {
             requestAnimationFrame(animate);
 
