@@ -57,7 +57,7 @@
             background: rgba(10, 2, 5, 0.65);
             border: 1px solid rgba(255, 77, 121, 0.35);
             border-radius: 24px;
-            backdrop-filter: blur(25px);
+            backdrop-filter: blur(20px);
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(255, 77, 121, 0.1);
             text-align: center;
             pointer-events: auto;
@@ -237,22 +237,23 @@
 
         crearArbolProcedural(0, -140, 0, 0, 72, 20, 5);
 
-        // 3. ENTORNO DE FONDO
+        // 3. ENTORNO DE FONDO (Corazones mágicos flotantes para la carta)
         const bgVertices = [];
         const datosCorazonesFondo = [];
-        const totalCorazonesFondo = 110;
+        const totalCorazonesFondo = 220; // Más cantidad para poblar toda la pantalla
 
         for (let i = 0; i < totalCorazonesFondo; i++) {
-            const x = (Math.random() - 0.5) * 950;
-            const y = (Math.random() - 0.4) * 450;
-            const z = -60 + (Math.random() - 0.5) * 60;
+            // Distribuidos a lo ancho y alto del plano visible
+            const x = (Math.random() - 0.5) * 850;
+            const y = (Math.random() - 0.5) * 500;
+            const z = 20 + (Math.random() - 0.5) * 80; // Posicionados óptimamente para no perderse en el fondo
             
             bgVertices.push(new THREE.Vector3(x, y, z));
             datosCorazonesFondo.push({
-                velocidadX: 0.6 + Math.random() * 1.0,
-                frecuenciaY: 0.001 + Math.random() * 0.002,
+                velocidadY: 0.4 + Math.random() * 0.9, // Velocidad de ascenso
+                frecuenciaX: 0.001 + Math.random() * 0.002,
                 fase: Math.random() * Math.PI * 2,
-                amplitudY: 0.2 + Math.random() * 0.35
+                amplitudX: 0.3 + Math.random() * 0.4
             });
         }
 
@@ -269,22 +270,21 @@
         const fallingMat = new THREE.PointsMaterial({ size: 16.0, map: crearTexturaCorazonVolumetrico('#ff1a53', '#b3002d'), transparent: true, alphaTest: 0.12, blending: THREE.NormalBlending });
         const fallingPointsObj = new THREE.Points(fallingGeo, fallingMat);
 
+        // Corazones de fondo optimizados y con tamaño ideal para verse detrás y alrededor de la carta
         const bgGeo = new THREE.BufferGeometry().setFromPoints(bgVertices);
-        const bgMat = new THREE.PointsMaterial({ size: 9.0, map: crearTexturaCorazonVolumetrico('#ff4d79', '#e60040'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+        const bgMat = new THREE.PointsMaterial({ size: 18.0, map: crearTexturaCorazonVolumetrico('#ff3366', '#b3002d'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.NormalBlending });
         const bgPointsObj = new THREE.Points(bgGeo, bgMat);
 
         const arbolGrupo = new THREE.Group();
         arbolGrupo.add(trunkPointsObj, leafPointsObj, fallingPointsObj);
         scene.add(arbolGrupo, bgPointsObj);
 
-        // Variable única de control numérico para el renderizado progresivo
         const controlGlobal = { crecimiento: 0, progresoHojas: 0 };
 
-        // 5. CRONOGRAMA DE ETAPAS LIGERO (Sin bucles pesados dentro de GSAP)
+        // 5. CRONOGRAMA DE ETAPAS EFICIENTE
         const tl = gsap.timeline();
 
         tl.addLabel("etapa1");
-        // Animamos únicamente la variable global (0 a 1) de forma lineal y fluida
         tl.to(controlGlobal, { crecimiento: 1, duration: 4.0, ease: "power1.out" }, "etapa1");
 
         tl.addLabel("etapa2", "+=0.3");
@@ -297,14 +297,17 @@
         tl.addLabel("etapa4", "+=3.5");
         tl.to(controlGlobal, { progresoHojas: 1, duration: 9.0, ease: "power1.inOut" }, "etapa4");
 
+        // ETAPA 5: Transición perfecta hacia la carta con activación total de la lluvia ambiental
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
         tl.to(arbolGrupo.position, { z: -150, x: -240, duration: 3.2, ease: "power2.inOut" }, "etapa5");
-        tl.to(bgMat, { opacity: 0.6, duration: 2 }, "etapa5");
-        tl.to(bgPointsObj.position, { z: 30, duration: 3.5, ease: "power2.out" }, "etapa5");
+        
+        // Desvanecemos y activamos los corazones flotantes de fondo
+        tl.to(bgMat, { opacity: 0.8, duration: 2.5 }, "etapa5");
+        tl.to(bgPointsObj.position, { z: 40, duration: 3.5, ease: "power2.out" }, "etapa5");
         tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
 
-        // 6. BUCLE DE RENDIMIENTO NATIVO (60 FPS estables)
+        // 6. BUCLE DE RENDIMIENTO NATIVO (60 FPS)
         const totalTrunk = trunkVertices.length;
         const totalLeaf = leafVertices.length;
         const totalFalling = fallingVertices.length;
@@ -314,21 +317,17 @@
 
             const tiempoActual = Date.now();
 
-            // Crecimiento progresivo manejado por la GPU usando DrawRange (Evita colapsos de memoria)
             trunkGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalTrunk));
             leafGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalLeaf));
 
-            if (controlGlobal.progresoHojas === 0) {
-                fallingGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalFalling));
-            } else {
+            // Caída de hojas del árbol hacia el suelo
+            if (controlGlobal.progresoHojas > 0.001) {
                 fallingGeo.setDrawRange(0, totalFalling);
-                
                 const limiteHojasActivadas = Math.floor(controlGlobal.progresoHojas * totalFalling);
                 
                 fallingVertices.forEach((v, idx) => {
                     if (idx < limiteHojasActivadas) {
                         const fisica = datosFisicaCaida[idx];
-                        
                         if (v.y > fisica.sueloTarget) {
                             v.y -= fisica.velocidadY;
                             v.x += Math.sin(tiempoActual * fisica.wobbleSpeed + fisica.fase) * fisica.wobbleAmp + fisica.velocidadX;
@@ -337,18 +336,24 @@
                 });
                 fallingGeo.setFromPoints(fallingVertices);
                 fallingGeo.attributes.position.needsUpdate = true;
+            } else {
+                fallingGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalFalling));
             }
 
-            // Brisa del fondo
-            if (bgMat.opacity > 0.05) {
+            // NUEVA LLUVIA AMBIENTAL ASCENDENTE (Se activa en la etapa de la carta)
+            if (bgMat.opacity > 0.01) {
                 bgVertices.forEach((v, idx) => {
                     const config = datosCorazonesFondo[idx];
-                    v.x += config.velocidadX;
-                    v.y += Math.sin(tiempoActual * config.frecuenciaY + config.fase) * config.amplitudY;
+                    
+                    // Flotan verticalmente hacia arriba
+                    v.y += config.velocidadY;
+                    // Suave balanceo horizontal en forma de onda
+                    v.x += Math.sin(tiempoActual * config.frecuenciaX + config.fase) * config.amplitudX;
 
-                    if (v.x > 460) {
-                        v.x = -460;
-                        v.y = (Math.random() - 0.4) * 450;
+                    // Si rebasan el límite superior de la pantalla, reaparecen abajo de forma infinita
+                    if (v.y > 280) {
+                        v.y = -280;
+                        v.x = (Math.random() - 0.5) * 850;
                     }
                 });
                 bgGeo.setFromPoints(bgVertices);
