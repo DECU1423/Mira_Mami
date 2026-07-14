@@ -104,23 +104,22 @@
     </div>
 
     <script>
-        // 1. CONFIGURACIÓN DEL ESCENARIO 3D
+        // 1. CONFIGURACIÓN DEL ESCENARIO 3D (Cámara alejada para ver el árbol completo y la caída)
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
-        camera.position.set(0, 35, 330); 
+        camera.position.set(0, 20, 440); // Alejada a 440 para encuadrar las raíces y el suelo perfectamente
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // CREACIÓN DE TEXTURA DE CORAZÓN PREMIUM: Tiene degradado interno para dar volumen real 3D
+        // TEXTURA DE CORAZÓN CON VOLUMEN (La que te gustó)
         function crearTexturaCorazonVolumetrico(colorCentro, colorBorde) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             
-            // Creamos un degradado radial interno dentro del propio corazón
             const grad = ctx.createRadialGradient(32, 28, 2, 32, 32, 28);
             grad.addColorStop(0, colorCentro);
             grad.addColorStop(0.8, colorBorde);
@@ -138,7 +137,7 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        // Textura suave para las partículas de madera dorada/marrón
+        // TEXTURA DE TRONCO ORIGINAL (Color exacto del primer diseño que te gustó)
         function crearTexturaMadera(r, g, b) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
@@ -150,31 +149,28 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        // 2. VECTORES DE COMPONENTES DE DISEÑO
+        // 2. VECTORES DE COMPONENTES
         const trunkVertices = [];
         const leafVertices = [];
         const fallingVertices = [];
 
-        // NUEVO GENERADOR: Racimos masivos y tridimensionales de hojas
+        // GENERADOR DE HOJAS CON MÁXIMA DENSIDAD
         function generarFollajeEsfericoDenso(cx, cy, cz, radioFollaje) {
-            // Súper densidad: 140 hojas por cada terminación o nudo de rama
             const densidadPorNudo = 140; 
             
             for(let i = 0; i < densidadPorNudo; i++) {
-                // Distribución uniforme dentro de una esfera real usando coordenadas esféricas
                 const u = Math.random();
                 const v = Math.random();
                 const theta = u * 2.0 * Math.PI;
                 const phi = Math.acos(2.0 * v - 1.0);
-                const r = Math.pow(Math.random(), 0.6) * radioFollaje; // Distribución balanceada hacia los bordes
+                const r = Math.pow(Math.random(), 0.6) * radioFollaje;
 
                 const x = cx + r * Math.sin(phi) * Math.cos(theta);
-                const y = cy + r * Math.sin(phi) * Math.sin(theta) * 0.85; // Un toque sutil chato para estética de copa
+                const y = cy + r * Math.sin(phi) * Math.sin(theta) * 0.85; 
                 const z = cz + r * Math.cos(phi);
 
                 const hojaPunto = new THREE.Vector3(x, y, z);
                 
-                // 78% quedan estables en la copa para mantener la frondosidad, 22% caerán al suelo
                 if (Math.random() > 0.22) {
                     leafVertices.push(hojaPunto);
                 } else {
@@ -183,7 +179,7 @@
             }
         }
 
-        // Estructura de tronco y ramas aprobada por el usuario
+        // TRONCO ORIGINAL QUE TE GUSTABA (Con la base ensanchada visible)
         function crearArbolProcedural(x1, y1, z1, angulo, longitud, grosor, profundidad) {
             const curvatura = Math.sin(profundidad * 1.5) * (profundidad * 2.2);
             const x2 = x1 + Math.sin(angulo) * longitud + curvatura;
@@ -197,7 +193,7 @@
                 
                 let factorBase = 1;
                 if (profundidad === 5 && t < 0.3) {
-                    factorBase = 1 + (0.3 - t) * 2.5; 
+                    factorBase = 1 + (0.3 - t) * 2.5; // Esto crea la base abierta dorada del suelo
                 }
 
                 const puntosAnillo = Math.max(3, Math.floor(grosorActual * 1.2));
@@ -212,9 +208,7 @@
                 }
             }
 
-            // CREACIÓN DE HOJAS: Empezamos a rellenar masivamente desde ramas medias e interiores
             if (profundidad <= 3) {
-                // Radio amplio (52) para asegurar que las nubes de hojas se solapen tapando los huecos
                 generarFollajeEsfericoDenso(x2, y2, z2, 52);
             }
 
@@ -232,11 +226,11 @@
             }
         }
 
-        // Ejecutar construcción del esqueleto aprobado
+        // Posicionamiento base
         crearArbolProcedural(0, -140, 0, 0, 72, 20, 5);
 
 
-        // 3. ENTORNO INTERACTIVO DE VIENTO DE CORAZONES DE FONDO (Etapa 5)
+        // 3. ENTORNO INTERACTIVO DE FONDO
         const bgVertices = [];
         const datosCorazonesFondo = [];
         const totalCorazonesFondo = 110;
@@ -256,23 +250,21 @@
         }
 
 
-        // 4. MATERIALES Y ENLACES (Uso de NormalBlending + alphaTest para máxima opacidad y densidad)
+        // 4. MATERIALES (Restaurados al 100% los valores del tronco dorado que te gustó)
         const trunkGeo = new THREE.BufferGeometry().setFromPoints(trunkVertices);
-        const trunkMat = new THREE.PointsMaterial({ size: 2.5, map: crearTexturaMadera(110, 65, 45), transparent: true, blending: THREE.AdditiveBlending });
+        const trunkMat = new THREE.PointsMaterial({ size: 2.5, map: crearTexturaMadera(105, 60, 45), transparent: true, blending: THREE.AdditiveBlending });
         const trunkPointsObj = new THREE.Points(trunkGeo, trunkMat);
 
-        // Hojas Fijas: Combinación densa con gradiente interno en tonos Rubí Brillante
         const leafGeo = new THREE.BufferGeometry().setFromPoints(leafVertices);
         const leafMat = new THREE.PointsMaterial({ 
             size: 16.0, 
             map: crearTexturaCorazonVolumetrico('#ff4071', '#c70039'), 
             transparent: true, 
-            alphaTest: 0.12, // Evita cuadros negros y permite superposición limpia
+            alphaTest: 0.12, 
             blending: THREE.NormalBlending 
         });
         const leafPointsObj = new THREE.Points(leafGeo, leafMat);
 
-        // Hojas móviles: Rojo Pasión Encendido
         const fallingGeo = new THREE.BufferGeometry().setFromPoints(fallingVertices);
         const fallingMat = new THREE.PointsMaterial({ 
             size: 16.0, 
@@ -283,7 +275,6 @@
         });
         const fallingPointsObj = new THREE.Points(fallingGeo, fallingMat);
 
-        // Fondo: Lluvia infinita horizontal traslúcida
         const bgGeo = new THREE.BufferGeometry().setFromPoints(bgVertices);
         const bgMat = new THREE.PointsMaterial({ size: 9.0, map: crearTexturaCorazonVolumetrico('#ff4d79', '#e60040'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
         const bgPointsObj = new THREE.Points(bgGeo, bgMat);
@@ -293,37 +284,37 @@
         scene.add(arbolGrupo, bgPointsObj);
 
 
-        // 5. CRONOGRAMA DE TRANSICIONES POR ETAPAS CON GSAP
+        // 5. CRONOGRAMA DE ANIMACIÓN POR ETAPAS
         const tl = gsap.timeline();
 
-        // ETAPA 1: El árbol crece y florece con una ráfaga masiva de hojas
+        // ETAPA 1: Crecimiento y floración completa en pantalla
         tl.addLabel("etapa1");
         tl.from(trunkVertices, { x: 0, y: -140, z: 0, duration: 3.5, ease: "power2.out", stagger: { each: 0.00002 } }, "etapa1");
         tl.from(leafVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
         tl.from(fallingVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
 
-        // ETAPA 2: Movimiento suave a la izquierda para balancear espacio
+        // ETAPA 2: El árbol se mueve elegantemente a la izquierda sin salirse de la vista
         tl.addLabel("etapa2", "+=0.3");
         tl.to(arbolGrupo.position, { x: -150, y: -5, duration: 3.0, ease: "power2.inOut" }, "etapa2");
         tl.to(arbolGrupo.rotation, { y: 0.12, duration: 3.0, ease: "power2.inOut" }, "etapa2");
 
-        // ETAPA 3: Aparición del primer texto poético lateral
+        // ETAPA 3: Aparece texto descriptivo lateral
         tl.addLabel("etapa3");
         tl.to("#etapa3-texto", { opacity: 1, y: -15, duration: 1.8 }, "etapa3");
 
-        // ETAPA 4: Caída libre y mecida de miles de corazones hacia el suelo
+        // ETAPA 4: Caída libre de corazones (Ahora completamente visible en el suelo del escenario)
         tl.addLabel("etapa4", "+=3.5");
         fallingVertices.forEach((v, index) => {
             tl.to(v, {
-                y: -150 + (Math.random() - 0.5) * 12, 
-                x: v.x + (Math.random() - 0.5) * 150, // Mayor dispersión horizontal de caída
+                y: -145 + (Math.random() - 0.5) * 10, // Caen justo en el suelo visible junto al tronco dorado
+                x: v.x + (Math.random() - 0.5) * 150, 
                 z: v.z + (Math.random() - 0.5) * 60,
                 duration: "random(5, 8.5)",
                 ease: "sine.inOut"
-            }, "etapa4+=" + (index * 0.0004)); // Stagger ultra rápido para procesar el gran volumen de hojas
+            }, "etapa4+=" + (index * 0.0004));
         });
 
-        // ETAPA 5: Transición a la carta de amor final y activación del flujo infinito de viento
+        // ETAPA 5: Transición a la carta de amor
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
         tl.to(arbolGrupo.position, { z: -150, x: -240, duration: 3.2, ease: "power2.inOut" }, "etapa5");
@@ -332,7 +323,7 @@
         tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
 
 
-        // 6. BUCLE CONTINUO DE ANIMACIÓN Y CORRIENTE DE VIENTO
+        // 6. ANIMACIONES INFINITAS DE BRISA
         function animate() {
             requestAnimationFrame(animate);
 
@@ -345,12 +336,10 @@
             fallingGeo.setFromPoints(fallingVertices);
             fallingGeo.attributes.position.needsUpdate = true;
 
-            // Simulación continua de viento cruzado en la etapa final
             if (bgMat.opacity > 0.05) {
                 const tiempoActual = Date.now();
                 bgVertices.forEach((v, idx) => {
                     const config = datosCorazonesFondo[idx];
-                    
                     v.x += config.velocidadX;
                     v.y += Math.sin(tiempoActual * config.frecuenciaY + config.fase) * config.amplitudY;
 
@@ -363,7 +352,6 @@
                 bgGeo.attributes.position.needsUpdate = true;
             }
 
-            // Sutil balanceo orgánico general de la copa con la brisa
             const tiempoSutil = Date.now() * 0.0003;
             arbolGrupo.rotation.y = 0.12 + Math.sin(tiempoSutil) * 0.02;
 
