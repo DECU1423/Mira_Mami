@@ -342,6 +342,9 @@
 
             // NUEVA LLUVIA AMBIENTAL ASCENDENTE (Se activa en la etapa de la carta)
             if (bgMat.opacity > 0.01) {
+                // Efecto latido: El tamaño de los corazones pulsa de manera orgánica
+                bgMat.size = 18.0 + Math.sin(tiempoActual * 0.003) * 4.0;
+
                 bgVertices.forEach((v, idx) => {
                     const config = datosCorazonesFondo[idx];
                     
