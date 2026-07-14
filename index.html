@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuestra Historia - El Árbol de la Vida</title>
+    <title>Nuestro Árbol de Amor Frondoso</title>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #020204; 
+            background-color: #030103; 
             font-family: 'Montserrat', sans-serif;
             color: #ffffff;
         }
@@ -30,22 +30,21 @@
         }
         #etapa3-texto {
             top: 45%;
-            left: 60%;
+            left: 62%;
             transform: translateY(-50%);
-            max-width: 400px;
+            max-width: 380px;
         }
         #etapa3-texto h2 {
             font-family: 'Dancing Script', cursive;
-            font-size: 3.4rem;
-            color: #ff3b6f;
+            font-size: 3.2rem;
+            color: #ff4d79;
             margin: 0 0 15px 0;
-            text-shadow: 0 0 20px rgba(255, 59, 111, 0.6);
+            text-shadow: 0 0 20px rgba(255, 77, 121, 0.5);
         }
         #etapa3-texto p {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             line-height: 1.8;
             color: #e5e5ea;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         #carta-contenedor {
             top: 50%;
@@ -55,23 +54,23 @@
             max-width: 550px;
             padding: 45px;
             box-sizing: border-box;
-            background: rgba(10, 3, 6, 0.65);
-            border: 1px solid rgba(255, 59, 111, 0.35);
+            background: rgba(10, 2, 5, 0.65);
+            border: 1px solid rgba(255, 77, 121, 0.35);
             border-radius: 24px;
             backdrop-filter: blur(25px);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(255, 59, 111, 0.15);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(255, 77, 121, 0.1);
             text-align: center;
             pointer-events: auto;
         }
         #carta-contenedor h1 {
             font-family: 'Dancing Script', cursive;
-            font-size: 3.8rem;
-            color: #ff2a62;
+            font-size: 3.6rem;
+            color: #ff3366;
             margin-top: 0;
-            text-shadow: 0 0 25px rgba(255, 42, 98, 0.7);
+            text-shadow: 0 0 25px rgba(255, 51, 102, 0.6);
         }
         #carta-contenedor p {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             line-height: 1.9;
             color: #f5f5fa;
             text-align: justify;
@@ -79,8 +78,8 @@
         .firma {
             margin-top: 35px;
             font-family: 'Dancing Script', cursive;
-            font-size: 2.8rem;
-            color: #ff5c8a;
+            font-size: 2.6rem;
+            color: #ff6688;
             text-align: right !important;
         }
     </style>
@@ -105,174 +104,188 @@
     </div>
 
     <script>
-        // 1. CONFIGURACIÓN DEL ESPACIO TRIDIMENSIONAL
+        // 1. CONFIGURACIÓN DEL ESCENARIO 3D
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
-        camera.position.set(0, 10, 280); 
+        camera.position.set(0, 35, 330); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Genera una textura artística de corazón suave (suavizado en los bordes para estilo acuarela)
-        function crearTexturaCorazonEsponjoso(colorHex, opacidadCentro = 1) {
+        // CREACIÓN DE TEXTURA DE CORAZÓN PREMIUM: Tiene degradado interno para dar volumen real 3D
+        function crearTexturaCorazonVolumetrico(colorCentro, colorBorde) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             
-            // Dibujamos el corazón con curvas Bezier estilizadas
-            ctx.fillStyle = colorHex;
-            ctx.shadowBlur = 6;
-            ctx.shadowColor = colorHex;
+            // Creamos un degradado radial interno dentro del propio corazón
+            const grad = ctx.createRadialGradient(32, 28, 2, 32, 32, 28);
+            grad.addColorStop(0, colorCentro);
+            grad.addColorStop(0.8, colorBorde);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+            ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.moveTo(32, 18);
-            ctx.bezierCurveTo(32, 8, 16, 8, 16, 26);
-            ctx.bezierCurveTo(16, 42, 32, 52, 32, 56);
-            ctx.bezierCurveTo(32, 52, 48, 42, 48, 26);
-            ctx.bezierCurveTo(48, 8, 32, 8, 32, 18);
+            ctx.bezierCurveTo(32, 6, 14, 6, 14, 26);
+            ctx.bezierCurveTo(14, 43, 32, 53, 32, 58);
+            ctx.bezierCurveTo(32, 53, 50, 43, 50, 26);
+            ctx.bezierCurveTo(50, 6, 32, 6, 32, 18);
             ctx.fill();
 
             return new THREE.CanvasTexture(canvas);
         }
 
-        // Textura difuminada brillante para las ramificaciones del árbol
-        function crearTexturaCorteza() {
+        // Textura suave para las partículas de madera dorada/marrón
+        function crearTexturaMadera(r, g, b) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(8,8,0, 8,8,8);
-            grad.addColorStop(0, 'rgba(240, 180, 70, 1)'); // Oro brillante
-            grad.addColorStop(0.5, 'rgba(180, 110, 30, 0.6)'); 
+            grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
             grad.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
             return new THREE.CanvasTexture(canvas);
         }
 
-        // 2. LOGÍTICA DE CREACIÓN DEL ÁRBOL ORGÁNICO Y SU COPA MASIVA
+        // 2. VECTORES DE COMPONENTES DE DISEÑO
         const trunkVertices = [];
         const leafVertices = [];
         const fallingVertices = [];
 
-        // Generador de Copa Frondosa Basado en la Forma de la Imagen de Referencia
-        function crearCopaCorazonGlobal(centroX, centroY, centroZ) {
-            const totalHojas = 14000; // Multiplicamos la cantidad para lograr frondosidad total
+        // NUEVO GENERADOR: Racimos masivos y tridimensionales de hojas
+        function generarFollajeEsfericoDenso(cx, cy, cz, radioFollaje) {
+            // Súper densidad: 140 hojas por cada terminación o nudo de rama
+            const densidadPorNudo = 140; 
             
-            for (let i = 0; i < totalHojas; i++) {
-                // Ecuación paramétrica de corazón 3D
-                const t = Math.random() * Math.PI * 2;
-                const r = 0.3 + Math.random() * 0.7; // Rellena el volumen interior para que no quede hueco
+            for(let i = 0; i < densidadPorNudo; i++) {
+                // Distribución uniforme dentro de una esfera real usando coordenadas esféricas
+                const u = Math.random();
+                const v = Math.random();
+                const theta = u * 2.0 * Math.PI;
+                const phi = Math.acos(2.0 * v - 1.0);
+                const r = Math.pow(Math.random(), 0.6) * radioFollaje; // Distribución balanceada hacia los bordes
+
+                const x = cx + r * Math.sin(phi) * Math.cos(theta);
+                const y = cy + r * Math.sin(phi) * Math.sin(theta) * 0.85; // Un toque sutil chato para estética de copa
+                const z = cz + r * Math.cos(phi);
+
+                const hojaPunto = new THREE.Vector3(x, y, z);
                 
-                // Silueta base del corazón
-                let x = 16 * Math.pow(Math.sin(t), 3);
-                let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-                // Le damos profundidad Z orgánica (más inflado en el centro, plano en los costados)
-                let z = (Math.random() - 0.5) * 22 * Math.cos(t * 0.5); 
-
-                // Escala de la copa general
-                const factorEscala = 4.8;
-                x *= factorEscala * r;
-                y *= factorEscala * r;
-                z *= factorEscala * r;
-
-                // Añadimos pequeñas perturbaciones naturales para romper la rigidez matemática
-                x += (Math.random() - 0.5) * 15;
-                y += (Math.random() - 0.5) * 15;
-                z += (Math.random() - 0.5) * 15;
-
-                const puntoHoja = new THREE.Vector3(centroX + x, centroY + y + 40, centroZ + z);
-
-                // Dividimos de forma balanceada cuáles hojas caen (Etapa 4) y cuáles se quedan fijas
-                if (Math.random() > 0.20) {
-                    leafVertices.push(puntoHoja);
+                // 78% quedan estables en la copa para mantener la frondosidad, 22% caerán al suelo
+                if (Math.random() > 0.22) {
+                    leafVertices.push(hojaPunto);
                 } else {
-                    fallingVertices.push(puntoHoja);
+                    fallingVertices.push(hojaPunto);
                 }
             }
         }
 
-        // Algoritmo recursivo para crear un tronco estilizado y ramas que se abren de verdad
-        function generarEstructuraArbol(x1, y1, z1, anguloX, anguloZ, longitud, grosor, profundidad) {
-            // Calculamos el punto final de este segmento de rama utilizando trigonometría esférica
-            const x2 = x1 + Math.sin(anguloX) * Math.cos(anguloZ) * longitud;
-            const y2 = y1 + Math.cos(anguloX) * longitud;
-            const z2 = z1 + Math.sin(anguloX) * Math.sin(anguloZ) * longitud;
+        // Estructura de tronco y ramas aprobada por el usuario
+        function crearArbolProcedural(x1, y1, z1, angulo, longitud, grosor, profundidad) {
+            const curvatura = Math.sin(profundidad * 1.5) * (profundidad * 2.2);
+            const x2 = x1 + Math.sin(angulo) * longitud + curvatura;
+            const y2 = y1 + Math.cos(angulo) * longitud;
+            const z2 = z1 + (Math.random() - 0.5) * (longitud * 0.25);
 
-            // Rellenamos el recorrido de la rama con partículas
-            const densidadRama = longitud * 4;
-            for (let i = 0; i < densidadRama; i++) {
-                const t = i / densidadRama;
-                const radioActual = grosor * (1 - t * 0.4); // Tapering natural (se vuelve delgada)
+            const pasos = longitud * 3;
+            for (let i = 0; i < pasos; i++) {
+                const t = i / pasos;
+                const grosorActual = grosor * (1 - t * 0.45);
                 
-                // Dispersión radial controlada alrededor del eje de la rama
-                const anguloAnillo = Math.random() * Math.PI * 2;
-                const distanciaAnillo = Math.random() * radioActual;
+                let factorBase = 1;
+                if (profundidad === 5 && t < 0.3) {
+                    factorBase = 1 + (0.3 - t) * 2.5; 
+                }
 
-                trunkVertices.push(new THREE.Vector3(
-                    THREE.MathUtils.lerp(x1, x2, t) + Math.cos(anguloAnillo) * distanciaAnillo,
-                    THREE.MathUtils.lerp(y1, y2, t) + Math.sin(anguloAnillo) * distanciaAnillo,
-                    THREE.MathUtils.lerp(z1, z2, t) + (Math.random() - 0.5) * radioActual
-                ));
+                const puntosAnillo = Math.max(3, Math.floor(grosorActual * 1.2));
+                for (let j = 0; j < puntosAnillo; j++) {
+                    const ang = (j / puntosAnillo) * Math.PI * 2;
+                    const r = Math.random() * grosorActual * factorBase;
+                    trunkVertices.push(new THREE.Vector3(
+                        THREE.MathUtils.lerp(x1, x2, t) + Math.cos(ang) * r,
+                        THREE.MathUtils.lerp(y1, y2, t) + Math.sin(ang) * r,
+                        THREE.MathUtils.lerp(z1, z2, t) + (Math.random() - 0.5) * r
+                    ));
+                }
             }
 
-            // Si llegamos a las puntas más altas, detenemos y preparamos la copa
+            // CREACIÓN DE HOJAS: Empezamos a rellenar masivamente desde ramas medias e interiores
+            if (profundidad <= 3) {
+                // Radio amplio (52) para asegurar que las nubes de hojas se solapen tapando los huecos
+                generarFollajeEsfericoDenso(x2, y2, z2, 52);
+            }
+
             if (profundidad === 0) return;
 
-            // Ramificación abierta (Se bifurca hacia los lados simulando venas o canales limpios)
-            const numDivisiones = 3; 
-            for (let i = 0; i < numDivisiones; i++) {
-                // Abrimos los ángulos de forma drástica para evitar el efecto columna anterior
-                const nuevoAnguloX = anguloX + (i - 1) * 0.55 + (Math.random() - 0.5) * 0.25;
-                const nuevoAnguloZ = anguloZ + (Math.random() - 0.5) * 1.2;
-                
-                generarEstructuraArbol(x2, y2, z2, nuevoAnguloX, nuevoAnguloZ, longitud * 0.72, grosor * 0.6, profundidad - 1);
+            const ramasHijas = profundidad > 3 ? 2 : 3; 
+            for (let r = 0; r < ramasHijas; r++) {
+                let desviacionAngulo = 0;
+                if (ramasHijas === 3) {
+                    desviacionAngulo = (r - 1) * 0.65 + (Math.random() - 0.5) * 0.25;
+                } else {
+                    desviacionAngulo = (r === 0 ? -0.45 : 0.45) + (Math.random() - 0.5) * 0.2;
+                }
+                crearArbolProcedural(x2, y2, z2, angulo + desviacionAngulo, longitud * 0.76, grosor * 0.62, profundidad - 1);
             }
         }
 
-        // Lanzamos la generación: Tronco inicia estilizado (grosor base 8 en vez de 24) y alto
-        generarEstructuraArbol(0, -120, 0, 0, 0, 60, 7.5, 5);
-        // Creamos la copa integrada masiva justo sobre el centro de las ramas
-        crearCopaCorazonGlobal(0, -10, 0);
+        // Ejecutar construcción del esqueleto aprobado
+        crearArbolProcedural(0, -140, 0, 0, 72, 20, 5);
 
 
-        // 3. SISTEMA DE CORAZONES EN VIENTO HORIZONTAL CONSTANTE (Etapa 5)
+        // 3. ENTORNO INTERACTIVO DE VIENTO DE CORAZONES DE FONDO (Etapa 5)
         const bgVertices = [];
-        const datosVientoFondo = [];
-        const totalCorazonesFondo = 120;
+        const datosCorazonesFondo = [];
+        const totalCorazonesFondo = 110;
 
         for (let i = 0; i < totalCorazonesFondo; i++) {
-            const x = (Math.random() - 0.5) * 1000;
-            const y = (Math.random() - 0.3) * 500;
-            const z = -90 + (Math.random() - 0.5) * 70;
+            const x = (Math.random() - 0.5) * 950;
+            const y = (Math.random() - 0.4) * 450;
+            const z = -60 + (Math.random() - 0.5) * 60;
             
             bgVertices.push(new THREE.Vector3(x, y, z));
-            datosVientoFondo.push({
-                velX: 0.7 + Math.random() * 1.1,
-                ondulacionY: 0.0015 + Math.random() * 0.002,
+            datosCorazonesFondo.push({
+                velocidadX: 0.6 + Math.random() * 1.0,
+                frecuenciaY: 0.001 + Math.random() * 0.002,
                 fase: Math.random() * Math.PI * 2,
-                amplitud: 0.2 + Math.random() * 0.3
+                amplitudY: 0.2 + Math.random() * 0.35
             });
         }
 
 
-        // 4. ENSAMBLAJE DE MATERIALES CON TEXTURAS DE ALTA DENSIDAD
+        // 4. MATERIALES Y ENLACES (Uso de NormalBlending + alphaTest para máxima opacidad y densidad)
         const trunkGeo = new THREE.BufferGeometry().setFromPoints(trunkVertices);
-        const trunkMat = new THREE.PointsMaterial({ size: 1.8, map: crearTexturaCorteza(), transparent: true, blending: THREE.AdditiveBlending });
+        const trunkMat = new THREE.PointsMaterial({ size: 2.5, map: crearTexturaMadera(110, 65, 45), transparent: true, blending: THREE.AdditiveBlending });
         const trunkPointsObj = new THREE.Points(trunkGeo, trunkMat);
 
-        // Hojas Fijas: Paleta carmesí saturado e imbricado para volumen real
+        // Hojas Fijas: Combinación densa con gradiente interno en tonos Rubí Brillante
         const leafGeo = new THREE.BufferGeometry().setFromPoints(leafVertices);
-        const leafMat = new THREE.PointsMaterial({ size: 9.5, map: crearTexturaCorazonEsponjoso('#e6194b'), transparent: true, alphaTest: 0.02, blending: THREE.NormalBlending });
+        const leafMat = new THREE.PointsMaterial({ 
+            size: 16.0, 
+            map: crearTexturaCorazonVolumetrico('#ff4071', '#c70039'), 
+            transparent: true, 
+            alphaTest: 0.12, // Evita cuadros negros y permite superposición limpia
+            blending: THREE.NormalBlending 
+        });
         const leafPointsObj = new THREE.Points(leafGeo, leafMat);
 
-        // Hojas móviles: Tono escarlata vivo iluminado
+        // Hojas móviles: Rojo Pasión Encendido
         const fallingGeo = new THREE.BufferGeometry().setFromPoints(fallingVertices);
-        const fallingMat = new THREE.PointsMaterial({ size: 9.5, map: crearTexturaCorazonEsponjoso('#ff1a40'), transparent: true, alphaTest: 0.02, blending: THREE.NormalBlending });
+        const fallingMat = new THREE.PointsMaterial({ 
+            size: 16.0, 
+            map: crearTexturaCorazonVolumetrico('#ff1a53', '#b3002d'), 
+            transparent: true, 
+            alphaTest: 0.12, 
+            blending: THREE.NormalBlending 
+        });
         const fallingPointsObj = new THREE.Points(fallingGeo, fallingMat);
 
-        // Fondo traslúcido interactivo
+        // Fondo: Lluvia infinita horizontal traslúcida
         const bgGeo = new THREE.BufferGeometry().setFromPoints(bgVertices);
-        const bgMat = new THREE.PointsMaterial({ size: 7.0, map: crearTexturaCorazonEsponjoso('#ff4d79'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+        const bgMat = new THREE.PointsMaterial({ size: 9.0, map: crearTexturaCorazonVolumetrico('#ff4d79', '#e60040'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
         const bgPointsObj = new THREE.Points(bgGeo, bgMat);
 
         const arbolGrupo = new THREE.Group();
@@ -280,46 +293,46 @@
         scene.add(arbolGrupo, bgPointsObj);
 
 
-        // 5. COREOGRAFÍA REFINADA EN ETAPAS MEDIANTE GSAP
+        // 5. CRONOGRAMA DE TRANSICIONES POR ETAPAS CON GSAP
         const tl = gsap.timeline();
 
-        // ETAPA 1: El árbol y su masiva copa florecen en su lugar central
+        // ETAPA 1: El árbol crece y florece con una ráfaga masiva de hojas
         tl.addLabel("etapa1");
-        tl.from(trunkVertices, { x: 0, y: -120, z: 0, duration: 3.5, ease: "power2.out", stagger: { each: 0.00003 } }, "etapa1");
-        tl.from(leafVertices, { x: 0, y: -40, z: 0, duration: 4, ease: "back.out(1.1)", stagger: { each: 0.00008 } }, "etapa1+=0.6");
-        tl.from(fallingVertices, { x: 0, y: -40, z: 0, duration: 4, ease: "back.out(1.1)", stagger: { each: 0.00008 } }, "etapa1+=0.6");
+        tl.from(trunkVertices, { x: 0, y: -140, z: 0, duration: 3.5, ease: "power2.out", stagger: { each: 0.00002 } }, "etapa1");
+        tl.from(leafVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
+        tl.from(fallingVertices, { x: 0, y: -140, z: 0, duration: 3.8, ease: "back.out(0.6)", stagger: { each: 0.00002 } }, "etapa1+=0.5");
 
-        // ETAPA 2: Desplazamiento equilibrado hacia el costado izquierdo
-        tl.addLabel("etapa2", "+=0.5");
-        tl.to(arbolGrupo.position, { x: -140, y: -5, duration: 3, ease: "power2.inOut" }, "etapa2");
-        tl.to(arbolGrupo.rotation, { y: 0.2, duration: 3, ease: "power2.inOut" }, "etapa2");
+        // ETAPA 2: Movimiento suave a la izquierda para balancear espacio
+        tl.addLabel("etapa2", "+=0.3");
+        tl.to(arbolGrupo.position, { x: -150, y: -5, duration: 3.0, ease: "power2.inOut" }, "etapa2");
+        tl.to(arbolGrupo.rotation, { y: 0.12, duration: 3.0, ease: "power2.inOut" }, "etapa2");
 
-        // ETAPA 3: Revelación de las palabras poéticas intermedias
+        // ETAPA 3: Aparición del primer texto poético lateral
         tl.addLabel("etapa3");
-        tl.to("#etapa3-texto", { opacity: 1, y: -20, duration: 2 }, "etapa3");
+        tl.to("#etapa3-texto", { opacity: 1, y: -15, duration: 1.8 }, "etapa3");
 
-        // ETAPA 4: Lluvia y desprendimiento natural de hojas que caen mecidas por el aire
+        // ETAPA 4: Caída libre y mecida de miles de corazones hacia el suelo
         tl.addLabel("etapa4", "+=3.5");
         fallingVertices.forEach((v, index) => {
             tl.to(v, {
-                y: -140 + (Math.random() - 0.5) * 12, 
-                x: v.x + (Math.random() - 0.5) * 140, 
+                y: -150 + (Math.random() - 0.5) * 12, 
+                x: v.x + (Math.random() - 0.5) * 150, // Mayor dispersión horizontal de caída
                 z: v.z + (Math.random() - 0.5) * 60,
                 duration: "random(5, 8.5)",
                 ease: "sine.inOut"
-            }, "etapa4+=" + (index * 0.001));
+            }, "etapa4+=" + (index * 0.0004)); // Stagger ultra rápido para procesar el gran volumen de hojas
         });
 
-        // ETAPA 5: Desenlace. Entrada de la carta de amor y activación de los corazones en viento continuo
+        // ETAPA 5: Transición a la carta de amor final y activación del flujo infinito de viento
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
-        tl.to(arbolGrupo.position, { z: -150, x: -210, duration: 3.5, ease: "power2.inOut" }, "etapa5");
-        tl.to(bgMat, { opacity: 0.6, duration: 2.5 }, "etapa5");
-        tl.to(bgPointsObj.position, { z: 30, duration: 4, ease: "power2.out" }, "etapa5");
+        tl.to(arbolGrupo.position, { z: -150, x: -240, duration: 3.2, ease: "power2.inOut" }, "etapa5");
+        tl.to(bgMat, { opacity: 0.6, duration: 2 }, "etapa5");
+        tl.to(bgPointsObj.position, { z: 30, duration: 3.5, ease: "power2.out" }, "etapa5");
         tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
 
 
-        // 6. CICLO OPERATIVO CONSTANTE (RENDERING Y BRISA)
+        // 6. BUCLE CONTINUO DE ANIMACIÓN Y CORRIENTE DE VIENTO
         function animate() {
             requestAnimationFrame(animate);
 
@@ -332,35 +345,32 @@
             fallingGeo.setFromPoints(fallingVertices);
             fallingGeo.attributes.position.needsUpdate = true;
 
-            // CONTROL DINÁMICO ETAPA 5: Brisa de corazones pasando continuamente por la pantalla
+            // Simulación continua de viento cruzado en la etapa final
             if (bgMat.opacity > 0.05) {
-                const clock = Date.now();
+                const tiempoActual = Date.now();
                 bgVertices.forEach((v, idx) => {
-                    const setup = datosVientoFondo[idx];
+                    const config = datosCorazonesFondo[idx];
                     
-                    // Avance horizontal e inclinación vertical sinoidal suave
-                    v.x += setup.velX;
-                    v.y += Math.sin(clock * setup.ondulacionY + setup.fase) * setup.amplitud;
+                    v.x += config.velocidadX;
+                    v.y += Math.sin(tiempoActual * config.frecuenciaY + config.fase) * config.amplitudY;
 
-                    // Si rebasa el límite visual derecho, se recicla al extremo izquierdo de forma armónica
-                    if (v.x > 480) {
-                        v.x = -480;
-                        v.y = (Math.random() - 0.3) * 500;
+                    if (v.x > 460) {
+                        v.x = -460;
+                        v.y = (Math.random() - 0.4) * 450;
                     }
                 });
                 bgGeo.setFromPoints(bgVertices);
                 bgGeo.attributes.position.needsUpdate = true;
             }
 
-            // Balanceo contemplativo del árbol
-            const tempo = Date.now() * 0.0003;
-            arbolGrupo.rotation.y = 0.2 + Math.sin(tempo) * 0.025;
+            // Sutil balanceo orgánico general de la copa con la brisa
+            const tiempoSutil = Date.now() * 0.0003;
+            arbolGrupo.rotation.y = 0.12 + Math.sin(tiempoSutil) * 0.02;
 
             renderer.render(scene, camera);
         }
         animate();
 
-        // Ajuste responsivo de pantalla
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
