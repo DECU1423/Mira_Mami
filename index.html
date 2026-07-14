@@ -137,6 +137,24 @@
             return new THREE.CanvasTexture(canvas);
         }
 
+        function crearTexturaPuntoMagico(colorCentro, colorBorde) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 28);
+            grad.addColorStop(0, colorCentro);
+            grad.addColorStop(0.4, colorBorde);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(32, 32, 24, 0, Math.PI * 2);
+            ctx.fill();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
         function crearTexturaMaderaLuminosa(r, g, b) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
@@ -148,6 +166,10 @@
             ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
             return new THREE.CanvasTexture(canvas);
         }
+
+        // Preparamos las texturas para la lluvia del fondo
+        const texturaPuntoFondo = crearTexturaPuntoMagico('#ffffff', '#ff4d79');
+        const texturaCorazonFondo = crearTexturaCorazonVolumetrico('#ff3366', '#b3002d');
 
         // 2. ARRAYS DE COMPONENTES
         const trunkVertices = [];
@@ -237,20 +259,19 @@
 
         crearArbolProcedural(0, -140, 0, 0, 72, 20, 5);
 
-        // 3. ENTORNO DE FONDO (Corazones mágicos flotantes para la carta)
+        // 3. ENTORNO DE FONDO (Puntos que luego se transforman en corazones)
         const bgVertices = [];
         const datosCorazonesFondo = [];
-        const totalCorazonesFondo = 220; // Más cantidad para poblar toda la pantalla
+        const totalCorazonesFondo = 220; 
 
         for (let i = 0; i < totalCorazonesFondo; i++) {
-            // Distribuidos a lo ancho y alto del plano visible
             const x = (Math.random() - 0.5) * 850;
             const y = (Math.random() - 0.5) * 500;
-            const z = 20 + (Math.random() - 0.5) * 80; // Posicionados óptimamente para no perderse en el fondo
+            const z = 20 + (Math.random() - 0.5) * 80; 
             
             bgVertices.push(new THREE.Vector3(x, y, z));
             datosCorazonesFondo.push({
-                velocidadY: 0.4 + Math.random() * 0.9, // Velocidad de ascenso
+                velocidadY: 0.4 + Math.random() * 0.9, 
                 frecuenciaX: 0.001 + Math.random() * 0.002,
                 fase: Math.random() * Math.PI * 2,
                 amplitudX: 0.3 + Math.random() * 0.4
@@ -270,18 +291,19 @@
         const fallingMat = new THREE.PointsMaterial({ size: 16.0, map: crearTexturaCorazonVolumetrico('#ff1a53', '#b3002d'), transparent: true, alphaTest: 0.12, blending: THREE.NormalBlending });
         const fallingPointsObj = new THREE.Points(fallingGeo, fallingMat);
 
-        // Corazones de fondo optimizados y con tamaño ideal para verse detrás y alrededor de la carta
+        // Iniciamos la lluvia ambiental con textura de PUNTOS y opacidad en 0
         const bgGeo = new THREE.BufferGeometry().setFromPoints(bgVertices);
-        const bgMat = new THREE.PointsMaterial({ size: 18.0, map: crearTexturaCorazonVolumetrico('#ff3366', '#b3002d'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.NormalBlending });
+        const bgMat = new THREE.PointsMaterial({ size: 8.0, map: texturaPuntoFondo, transparent: true, opacity: 0, depthWrite: false, blending: THREE.NormalBlending });
         const bgPointsObj = new THREE.Points(bgGeo, bgMat);
 
         const arbolGrupo = new THREE.Group();
         arbolGrupo.add(trunkPointsObj, leafPointsObj, fallingPointsObj);
         scene.add(arbolGrupo, bgPointsObj);
 
-        const controlGlobal = { crecimiento: 0, progresoHojas: 0 };
+        // Variables de control añadidas para manejar dinámicamente la transición visual
+        const controlGlobal = { crecimiento: 0, progresoHojas: 0, bgSize: 8.0, esCorazon: false };
 
-        // 5. CRONOGRAMA DE ETAPAS EFICIENTE
+        // 5. CRONOGRAMA DE ETAPAS
         const tl = gsap.timeline();
 
         tl.addLabel("etapa1");
@@ -297,15 +319,28 @@
         tl.addLabel("etapa4", "+=3.5");
         tl.to(controlGlobal, { progresoHojas: 1, duration: 9.0, ease: "power1.inOut" }, "etapa4");
 
-        // ETAPA 5: Transición perfecta hacia la carta con activación total de la lluvia ambiental
+        // ETAPA 5: Transición hacia la carta con la aparición de puntos y su posterior cambio a corazones
         tl.addLabel("etapa5", "+=3");
         tl.to("#etapa3-texto", { opacity: 0, y: -40, duration: 1.2 }, "etapa5");
         tl.to(arbolGrupo.position, { z: -150, x: -240, duration: 3.2, ease: "power2.inOut" }, "etapa5");
         
-        // Desvanecemos y activamos los corazones flotantes de fondo
-        tl.to(bgMat, { opacity: 0.8, duration: 2.5 }, "etapa5");
+        // 1. Aparecen los puntos flotantes primero en el fondo
+        tl.to(bgMat, { opacity: 0.8, duration: 2.0 }, "etapa5");
+        tl.to(controlGlobal, { bgSize: 10.0, duration: 2.0 }, "etapa5");
         tl.to(bgPointsObj.position, { z: 40, duration: 3.5, ease: "power2.out" }, "etapa5");
-        tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=0.8");
+        
+        // 2. Transición clave: Cambiamos los puntos por corazones en tiempo de ejecución
+        tl.call(() => {
+            bgMat.map = texturaCorazonFondo;
+            bgMat.needsUpdate = true;
+            controlGlobal.esCorazon = true;
+        }, null, "etapa5+=2.2");
+
+        // 3. Los nuevos corazones crecen y toman su tamaño ideal de manera elástica
+        tl.to(controlGlobal, { bgSize: 18.0, duration: 1.2, ease: "back.out(1.5)" }, "etapa5+=2.2");
+        
+        // 4. Se muestra finalmente el gran contenedor de la carta de amor
+        tl.to("#carta-contenedor", { opacity: 1, scale: 1, duration: 2.5, ease: "back.out(1.02)" }, "etapa5+=1.2");
 
         // 6. BUCLE DE RENDIMIENTO NATIVO (60 FPS)
         const totalTrunk = trunkVertices.length;
@@ -340,20 +375,23 @@
                 fallingGeo.setDrawRange(0, Math.floor(controlGlobal.crecimiento * totalFalling));
             }
 
-            // NUEVA LLUVIA AMBIENTAL ASCENDENTE (Se activa en la etapa de la carta)
+            // CONTROL DINÁMICO DE LA LLUVIA AMBIENTAL
             if (bgMat.opacity > 0.01) {
-                // Efecto latido: El tamaño de los corazones pulsa de manera orgánica
-                bgMat.size = 18.0 + Math.sin(tiempoActual * 0.003) * 4.0;
+                if (controlGlobal.esCorazon) {
+                    // Si ya mutaron a corazones, se activa el efecto latido orgánico
+                    bgMat.size = controlGlobal.bgSize + Math.sin(tiempoActual * 0.003) * 4.0;
+                } else {
+                    // Si siguen siendo puntos, hacen un sutil centelleo estelar
+                    bgMat.size = controlGlobal.bgSize + Math.sin(tiempoActual * 0.008) * 1.2;
+                }
 
                 bgVertices.forEach((v, idx) => {
                     const config = datosCorazonesFondo[idx];
                     
-                    // Flotan verticalmente hacia arriba
-                    v.y += config.velocidadY;
-                    // Suave balanceo horizontal en forma de onda
-                    v.x += Math.sin(tiempoActual * config.frecuenciaX + config.fase) * config.amplitudX;
+                    v.y += config.velocidadY; // Flotan verticalmente hacia arriba
+                    v.x += Math.sin(tiempoActual * config.frecuenciaX + config.fase) * config.amplitudX; // Bamboleo
 
-                    // Si rebasan el límite superior de la pantalla, reaparecen abajo de forma infinita
+                    // Si rebasan la pantalla superior, se reciclan abajo infinitamente
                     if (v.y > 280) {
                         v.y = -280;
                         v.x = (Math.random() - 0.5) * 850;
